@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Toaster - GIRAFFE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script>
+        const vertexShader = `
+            attribute vec2 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                gl_Position = vec4(aPosition, 0, 1);
+            }
+        `;
+
+        const fragmentShader = `
+            precision mediump float;
+            varying vec2 vTexCoord;
+            uniform float uTime;
+            uniform vec2 uResolution;
+            
+            void main() {
+                // GIRAFFE: Multi-color smooth-edged animated wipe with anti-aliased edges
+                vec2 uv = vTexCoord;
+                
+                // Giraffe moves across screen
+                float t = mod(uTime, 2.0);
+                float movePos = t * 1.5 - 0.25;
+                
+                // Simplified giraffe shape
+                float x = uv.x - movePos;
+                float y = uv.y - 0.5;
+                
+                // Body
+                float body = length(vec2(x + 0.1, y)) - 0.15;
+                // Neck
+                float neck = length(vec2(x + 0.05, y + 0.2)) - 0.08;
+                // Head
+                float head = length(vec2(x, y + 0.35)) - 0.06;
+                
+                float shape = min(body, min(neck, head));
+                
+                // Smooth anti-aliased edge
+                float edgeWidth = 0.03;
+                float smoothEdge = smoothstep(edgeWidth, -edgeWidth, shape);
+                
+                // Fader control for smooth transitions
+                float faderLevel = smoothEdge;
+                
+                // Multi-color palette
+                vec3 color1 = vec3(1.0, 0.6, 0.2); // Source 1 (orange)
+                vec3 color2 = vec3(0.2, 0.6, 1.0); // Source 2 (blue)
+                vec3 giraffeColor = vec3(1.0, 0.8, 0.4); // Giraffe (yellow)
+                
+                // Mix based on fader level
+                vec3 finalColor = mix(color1, giraffeColor, faderLevel);
+                
+                gl_FragColor = vec4(finalColor, 1.0);
+            }
+        `;
+
+        let shader;
+        
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            shader = createShader(vertexShader, fragmentShader);
+        }
+
+        function draw() {
+            background(0);
+            shader.setUniform('uTime', frameCount * 0.016);
+            shader.setUniform('uResolution', [width, height]);
+            shader.drawRect(0, 0, width, height);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>

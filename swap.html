@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Toaster - Swap</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script>
+        const vertexShader = `
+            attribute vec2 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                gl_Position = vec4(aPosition, 0, 1);
+            }
+        `;
+
+        const fragmentShader = `
+            precision mediump float;
+            varying vec2 vTexCoord;
+            uniform float uTime;
+            uniform vec2 uResolution;
+            
+            void main() {
+                // Swap: video pieces cross each other
+                float t = mod(uTime, 2.0);
+                float progress = t;
+                
+                vec2 uv = vTexCoord;
+                
+                // Create 4 quadrants that swap positions
+                float leftRight = step(0.5, uv.x);
+                float topBot = step(0.5, uv.y);
+                
+                // Animate the swap
+                float swapOffset = progress - 0.5;
+                
+                vec2 color;
+                if (leftRight < 0.5 && topBot < 0.5) {
+                    // Bottom-left quadrant
+                    color = vec2(1.0, 0.3, 0.3);
+                } else if (leftRight >= 0.5 && topBot < 0.5) {
+                    // Bottom-right quadrant
+                    color = vec2(0.3, 1.0, 0.3);
+                } else if (leftRight < 0.5 && topBot >= 0.5) {
+                    // Top-left quadrant
+                    color = vec2(0.3, 0.3, 1.0);
+                } else {
+                    // Top-right quadrant
+                    color = vec2(1.0, 1.0, 0.3);
+                }
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        let shader;
+        
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            shader = createShader(vertexShader, fragmentShader);
+        }
+
+        function draw() {
+            background(0);
+            shader.setUniform('uTime', frameCount * 0.016);
+            shader.setUniform('uResolution', [width, height]);
+            shader.drawRect(0, 0, width, height);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>

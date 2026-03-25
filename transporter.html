@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Toaster - Transporter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script>
+        const vertexShader = `
+            attribute vec2 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                gl_Position = vec4(aPosition, 0, 1);
+            }
+        `;
+
+        const fragmentShader = `
+            precision mediump float;
+            varying vec2 vTexCoord;
+            uniform float uTime;
+            uniform vec2 uResolution;
+            
+            void main() {
+                // Transporter: moving objects in transporter beam
+                vec2 uv = vTexCoord;
+                
+                // Moving object
+                vec2 objPos = vec2(0.3 + sin(uTime) * 0.2, 0.5);
+                float objDist = length(uv - objPos);
+                float obj = smoothstep(0.15, 0.0, objDist);
+                
+                // Transporter beam effect - scan lines
+                float scanLine = sin(uv.y * 100.0 - uTime * 20.0);
+                float beam = smoothstep(0.5, 1.0, scanLine);
+                
+                // Combine object with transporter effect
+                float transporter = obj * beam;
+                
+                vec2 color = transporter * vec2(0.0, 1.0, 0.8) + obj * 0.3 * vec2(1.0, 0.5, 0.0);
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        let shader;
+        
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            shader = createShader(vertexShader, fragmentShader);
+        }
+
+        function draw() {
+            background(0);
+            shader.setUniform('uTime', frameCount * 0.016);
+            shader.setUniform('uResolution', [width, height]);
+            shader.drawRect(0, 0, width, height);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>

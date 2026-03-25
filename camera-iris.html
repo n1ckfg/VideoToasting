@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Toaster - CAMERA IRIS</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+    <style>
+        body { margin: 0; background: #000; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script>
+        const vertexShader = `
+            attribute vec2 aPosition;
+            attribute vec2 aTexCoord;
+            varying vec2 vTexCoord;
+            void main() {
+                vTexCoord = aTexCoord;
+                gl_Position = vec4(aPosition, 0, 1);
+            }
+        `;
+
+        const fragmentShader = `
+            precision mediump float;
+            varying vec2 vTexCoord;
+            uniform float uTime;
+            uniform vec2 uResolution;
+            
+            void main() {
+                // CAMERA IRIS: 4-color expanding/contracting iris wipe
+                vec2 uv = vTexCoord;
+                
+                // Distance from center
+                float dist = length(uv - vec2(0.5));
+                
+                // Iris animation - close then open
+                float t = mod(uTime, 2.0);
+                float irisSize;
+                
+                if (t < 1.0) {
+                    // Closing phase
+                    irisSize = 1.0 - t;
+                } else {
+                    // Opening phase
+                    irisSize = t - 1.0;
+                }
+                
+                // Iris blades effect
+                int numBlades = 6;
+                float angle = atan(uv.y - 0.5, uv.x - 0.5);
+                float bladeAngle = mod(angle + 3.14159, 3.14159 * 2.0 / float(numBlades));
+                float bladeWidth = 3.14159 * 2.0 / float(numBlades) * 0.8;
+                float bladeEffect = smoothstep(bladeWidth, bladeWidth * 0.5, bladeAngle);
+                
+                // Determine which source to show
+                vec3 color;
+                if (dist < irisSize) {
+                    // Inside iris - show source 2
+                    color = vec3(0.3, 0.3, 1.0);
+                } else {
+                    // Outside iris - show source 1
+                    color = vec3(1.0, 0.3, 0.3);
+                }
+                
+                // Add blade shadows
+                color *= 0.8 + 0.2 * bladeEffect;
+                
+                gl_FragColor = vec4(color, 1.0);
+            }
+        `;
+
+        let shader;
+        
+        function setup() {
+            createCanvas(windowWidth, windowHeight);
+            shader = createShader(vertexShader, fragmentShader);
+        }
+
+        function draw() {
+            background(0);
+            shader.setUniform('uTime', frameCount * 0.016);
+            shader.setUniform('uResolution', [width, height]);
+            shader.drawRect(0, 0, width, height);
+        }
+
+        function windowResized() {
+            resizeCanvas(windowWidth, windowHeight);
+        }
+    </script>
+</body>
+</html>
