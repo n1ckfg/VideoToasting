@@ -11,12 +11,14 @@
 <body>
     <script>
         const vertexShader = `
-            attribute vec2 aPosition;
+            attribute vec3 aPosition;
             attribute vec2 aTexCoord;
             varying vec2 vTexCoord;
             void main() {
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
                 vTexCoord = aTexCoord;
-                gl_Position = vec4(aPosition, 0, 1);
+                gl_Position = positionVec4;
             }
         `;
 
@@ -25,62 +27,63 @@
             varying vec2 vTexCoord;
             uniform float uTime;
             uniform vec2 uResolution;
-            
+
+            #define NUM_BLINDS 3
+
             void main() {
                 // Blinds 3 Expand: Algorithmic 3 vertical rectangles expanding
                 vec2 uv = vTexCoord;
-                
+
                 // Animation progress
                 float t = mod(uTime, 2.0);
                 float progress = smoothstep(0.0, 1.0, t);
-                
+
                 // Three vertical blinds
-                int numBlinds = 3;
-                float blindWidth = 1.0 / float(numBlinds);
-                
-                vec3 color;
-                for (int i = 0; i < numBlinds; i++) {
+                float blindWidth = 1.0 / float(NUM_BLINDS);
+
+                vec3 color = vec3(0.0);
+                for (int i = 0; i < NUM_BLINDS; i++) {
                     float blindCenterX = (float(i) + 0.5) * blindWidth;
-                    float blindStart = float(i) * blindWidth;
-                    float blindEnd = float(i + 1) * blindWidth;
-                    
+
                     // Expand from center of each blind
                     float distFromCenter = abs(uv.x - blindCenterX);
                     float halfWidth = blindWidth * 0.5 * progress;
-                    
+
                     if (distFromCenter < halfWidth) {
                         // Inside expanding blind
                         float edgeFade = smoothstep(halfWidth, halfWidth * 0.7, distFromCenter);
-                        
+
                         // Alternating colors for each blind
-                        if (mod(float(i), 2.0) == 0.0) {
+                        float m = mod(float(i), 2.0);
+                        if (m < 0.5) {
                             color += vec3(1.0, 0.5, 0.0) * edgeFade;
                         } else {
                             color += vec3(0.0, 0.5, 1.0) * edgeFade;
                         }
                     }
                 }
-                
+
                 gl_FragColor = vec4(color, 1.0);
             }
         `;
 
-        let shader;
-        
+        let shaderProgram;
+
         function setup() {
-            createCanvas(windowWidth, windowHeight);
-            shader = createShader(vertexShader, fragmentShader);
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            noStroke();
+            shaderProgram = createShader(vertexShader, fragmentShader);
         }
 
         function draw() {
-            background(0);
-            shader.setUniform('uTime', frameCount * 0.016);
-            shader.setUniform('uResolution', [width, height]);
-            shader.drawRect(0, 0, width, height);
+            shader(shaderProgram);
+            shaderProgram.setUniform('uTime', frameCount * 0.016);
+            shaderProgram.setUniform('uResolution', [width, height]);
+            plane(width, height);
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
+            resizeCanvas(windowWidth, windowHeight, WEBGL);
         }
     </script>
 </body>

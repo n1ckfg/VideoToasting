@@ -11,12 +11,14 @@
 <body>
     <script>
         const vertexShader = `
-            attribute vec2 aPosition;
+            attribute vec3 aPosition;
             attribute vec2 aTexCoord;
             varying vec2 vTexCoord;
             void main() {
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
                 vTexCoord = aTexCoord;
-                gl_Position = vec4(aPosition, 0, 1);
+                gl_Position = positionVec4;
             }
         `;
 
@@ -25,42 +27,43 @@
             varying vec2 vTexCoord;
             uniform float uTime;
             uniform vec2 uResolution;
-            
+
             void main() {
                 // Squeeze/Zoom: uniform shrink/expand
                 float t = mod(uTime, 2.0);
                 float scale = 0.3 + sin(t * 3.14159) * 0.7; // 0.3 to 1.0
-                
+
                 vec2 center = vec2(0.5);
                 vec2 uv = (vTexCoord - center) / scale + center;
-                
-                vec2 color;
+
+                vec3 color;
                 if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-                    color = vec2(0.0, 0.0, 0.0); // Outside (black)
+                    color = vec3(0.0, 0.0, 0.0); // Outside (black)
                 } else {
-                    color = vec2(1.0, 0.8, 0.2); // Inside (yellow-ish)
+                    color = vec3(1.0, 0.8, 0.2); // Inside (yellow-ish)
                 }
-                
+
                 gl_FragColor = vec4(color, 1.0);
             }
         `;
 
-        let shader;
-        
+        let shaderProgram;
+
         function setup() {
-            createCanvas(windowWidth, windowHeight);
-            shader = createShader(vertexShader, fragmentShader);
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            noStroke();
+            shaderProgram = createShader(vertexShader, fragmentShader);
         }
 
         function draw() {
-            background(0);
-            shader.setUniform('uTime', frameCount * 0.016);
-            shader.setUniform('uResolution', [width, height]);
-            shader.drawRect(0, 0, width, height);
+            shader(shaderProgram);
+            shaderProgram.setUniform('uTime', frameCount * 0.016);
+            shaderProgram.setUniform('uResolution', [width, height]);
+            plane(width, height);
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
+            resizeCanvas(windowWidth, windowHeight, WEBGL);
         }
     </script>
 </body>

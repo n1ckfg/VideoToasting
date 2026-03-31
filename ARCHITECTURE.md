@@ -49,13 +49,41 @@ Each effect is a standalone HTML file with this structure:
 | giraffe | Anti-aliased animated wipe |
 | blinds-3-expand | 3-column rectangle effect |
 
-## Known Issues
+## p5.js Shader Pattern
 
-All effect files use incorrect p5.js shader API:
-- `createCanvas()` missing WEBGL mode
-- `shader.drawRect()` does not exist in p5.js
+Each effect uses this p5.js WEBGL shader pattern:
 
-Correct approach requires:
-1. `createCanvas(w, h, WEBGL)`
-2. `shader(myShader)` to activate
-3. `rect()` or `quad()` to draw geometry
+```javascript
+// Vertex shader: transform normalized coords to clip space
+const vertexShader = `
+    attribute vec3 aPosition;
+    attribute vec2 aTexCoord;
+    varying vec2 vTexCoord;
+    void main() {
+        vec4 positionVec4 = vec4(aPosition, 1.0);
+        positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
+        vTexCoord = aTexCoord;
+        gl_Position = positionVec4;
+    }
+`;
+
+// Setup: WEBGL mode required
+function setup() {
+    createCanvas(windowWidth, windowHeight, WEBGL);
+    noStroke();
+    shaderProgram = createShader(vertexShader, fragmentShader);
+}
+
+// Draw: activate shader, set uniforms, render plane
+function draw() {
+    shader(shaderProgram);
+    shaderProgram.setUniform('uTime', frameCount * 0.016);
+    shaderProgram.setUniform('uResolution', [width, height]);
+    plane(width, height);
+}
+```
+
+GLSL notes:
+- Use `#define` for loop bounds (WebGL requires constant expressions)
+- Use `vec3` for colors, not `vec2`
+- Avoid `== 0.0` float comparisons; use `< 0.5` instead

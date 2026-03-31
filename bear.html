@@ -11,12 +11,14 @@
 <body>
     <script>
         const vertexShader = `
-            attribute vec2 aPosition;
+            attribute vec3 aPosition;
             attribute vec2 aTexCoord;
             varying vec2 vTexCoord;
             void main() {
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
                 vTexCoord = aTexCoord;
-                gl_Position = vec4(aPosition, 0, 1);
+                gl_Position = positionVec4;
             }
         `;
 
@@ -25,25 +27,23 @@
             varying vec2 vTexCoord;
             uniform float uTime;
             uniform vec2 uResolution;
-            
+
             void main() {
                 // BEAR: 4-color wipe moving across screen with matte outline
                 vec2 uv = vTexCoord;
-                
+
                 // Wipe moves across screen
                 float t = mod(uTime, 2.0);
                 float wipePos = t;
-                
+
                 // Bear shape outline (simplified as a moving shape)
                 float shapeX = uv.x - wipePos;
                 float shapeY = uv.y - 0.5;
                 float dist = length(vec2(shapeX, shapeY));
-                
+
                 // Create bear-like outline with matte
-                float outline = smoothstep(0.15, 0.1, dist);
                 float matteWidth = 0.05;
-                float matte = smoothstep(matteWidth, 0.0, abs(dist - 0.1));
-                
+
                 vec3 color;
                 if (dist < 0.1 - matteWidth) {
                     // Inside shape - source 2
@@ -55,27 +55,28 @@
                     // Outside - source 1
                     color = vec3(0.8, 0.3, 0.3);
                 }
-                
+
                 gl_FragColor = vec4(color, 1.0);
             }
         `;
 
-        let shader;
-        
+        let shaderProgram;
+
         function setup() {
-            createCanvas(windowWidth, windowHeight);
-            shader = createShader(vertexShader, fragmentShader);
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            noStroke();
+            shaderProgram = createShader(vertexShader, fragmentShader);
         }
 
         function draw() {
-            background(0);
-            shader.setUniform('uTime', frameCount * 0.016);
-            shader.setUniform('uResolution', [width, height]);
-            shader.drawRect(0, 0, width, height);
+            shader(shaderProgram);
+            shaderProgram.setUniform('uTime', frameCount * 0.016);
+            shaderProgram.setUniform('uResolution', [width, height]);
+            plane(width, height);
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
+            resizeCanvas(windowWidth, windowHeight, WEBGL);
         }
     </script>
 </body>

@@ -11,12 +11,14 @@
 <body>
     <script>
         const vertexShader = `
-            attribute vec2 aPosition;
+            attribute vec3 aPosition;
             attribute vec2 aTexCoord;
             varying vec2 vTexCoord;
             void main() {
+                vec4 positionVec4 = vec4(aPosition, 1.0);
+                positionVec4.xy = positionVec4.xy * 2.0 - 1.0;
                 vTexCoord = aTexCoord;
-                gl_Position = vec4(aPosition, 0, 1);
+                gl_Position = positionVec4;
             }
         `;
 
@@ -25,42 +27,42 @@
             varying vec2 vTexCoord;
             uniform float uTime;
             uniform vec2 uResolution;
-            
+
             void main() {
                 // Split: video divided in two pieces
-                float t = mod(uTime, 2.0);
                 float splitPos = 0.5 + sin(uTime) * 0.3;
                 float gap = 0.02 + sin(uTime * 3.0) * 0.01;
-                
-                vec2 color;
+
+                vec3 color;
                 if (vTexCoord.x < splitPos - gap * 0.5) {
-                    color = vec2(1.0, 0.5, 0.0); // Left side (orange)
+                    color = vec3(1.0, 0.5, 0.0); // Left side (orange)
                 } else if (vTexCoord.x > splitPos + gap * 0.5) {
-                    color = vec2(0.0, 0.5, 1.0); // Right side (cyan)
+                    color = vec3(0.0, 0.5, 1.0); // Right side (cyan)
                 } else {
-                    color = vec2(0.1, 0.1, 0.1); // Gap (dark)
+                    color = vec3(0.1, 0.1, 0.1); // Gap (dark)
                 }
-                
+
                 gl_FragColor = vec4(color, 1.0);
             }
         `;
 
-        let shader;
-        
+        let shaderProgram;
+
         function setup() {
-            createCanvas(windowWidth, windowHeight);
-            shader = createShader(vertexShader, fragmentShader);
+            createCanvas(windowWidth, windowHeight, WEBGL);
+            noStroke();
+            shaderProgram = createShader(vertexShader, fragmentShader);
         }
 
         function draw() {
-            background(0);
-            shader.setUniform('uTime', frameCount * 0.016);
-            shader.setUniform('uResolution', [width, height]);
-            shader.drawRect(0, 0, width, height);
+            shader(shaderProgram);
+            shaderProgram.setUniform('uTime', frameCount * 0.016);
+            shaderProgram.setUniform('uResolution', [width, height]);
+            plane(width, height);
         }
 
         function windowResized() {
-            resizeCanvas(windowWidth, windowHeight);
+            resizeCanvas(windowWidth, windowHeight, WEBGL);
         }
     </script>
 </body>
