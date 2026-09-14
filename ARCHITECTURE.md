@@ -18,10 +18,12 @@ VideoToasting is a web-based implementation of classic 1990s NewTek Video Toaste
 ```
 VideoToasting/
 ├── index.html                    # Main navigation/status page
-├── <effect-name>.html           # Individual effect implementations
+├── effects/                      # Individual effect implementations
+│   └── <effect-name>.html
 ├── ref/
 │   └── video_toaster_methods.md # Reference documentation
-├── AGENTS.md                    # Development workflow instructions
+├── docs/                         # Project documentation (e.g. PLAN.md)
+├── images/                       # Generated images or references
 └── run.command / run.bat        # Platform-specific launchers
 ```
 
@@ -121,7 +123,7 @@ The `index.html` serves as the central status dashboard:
 
 ## Development Workflow
 
-Based on AGENTS.md:
+Based on docs/PLAN.md:
 1. Read effect description from `ref/video_toaster_methods.md`
 2. Create HTML file with p5.js boilerplate
 3. Implement GLSL shader based on original hardware description
