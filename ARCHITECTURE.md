@@ -38,11 +38,11 @@ HTML Container
 │   └── Standard quad setup with UV coordinates
 ├── Fragment Shader (GLSL)
 │   ├── Effect-specific computation
-│   ├── Uniform inputs: uTime, uResolution
+│   ├── Uniform inputs: uTime, uResolution, texRed, texBlue, etc. (video textures)
 │   └── Varying inputs: vTexCoord
 └── p5.js Application Code
-    ├── setup(): Initialize canvas and shader
-    ├── draw(): Animation loop updating uniforms
+    ├── setup(): Initialize canvas, load videos (muted, looping), and shader
+    ├── draw(): Animation loop updating uniforms and textures
     └── windowResized(): Responsive handling
 ```
 
@@ -66,9 +66,10 @@ precision mediump float;           // Precision for mobile devices
 varying vec2 vTexCoord;            // UV coordinates
 uniform float uTime;               // Animation time
 uniform vec2 uResolution;          // Canvas resolution
+uniform sampler2D texRed;          // Video texture mapping
 
 void main() {
-    // Effect-specific GLSL computation
+    // Effect-specific GLSL computation using texture2D(texRed, vTexCoord)
     gl_FragColor = vec4(color, alpha);
 }
 ```
@@ -109,6 +110,7 @@ Mathematical screen division algorithms:
 Each effect communicates with the shader via OpenGL uniforms:
 - `uTime`: Floating-point time value for animation (frameCount * 0.016)
 - `uResolution`: Vector2 containing canvas width and height
+- `texRed`, `texBlue`, `texOrange`, `texGreen`, `texYellow`, `texGray`: Video texture samplers mapping to standard local files in `images/`
 
 ### Coordinate Systems
 - **Screen Space**: p5.js uses pixels (0,0 at top-left)
@@ -151,7 +153,7 @@ The modern implementation abstracts these hardware constraints into pure mathema
 
 - Uses `mediump` precision for mobile compatibility
 - Single quad rendering (2 triangles) for all effects
-- No external textures (procedural generation only)
+- Uses HTML5 video elements for source textures (mapping Amiga color channels to videos)
 - Real-time shader computation (no pre-baked frames)
 
 ## Future Enhancements
@@ -159,7 +161,7 @@ The modern implementation abstracts these hardware constraints into pure mathema
 Potential improvements to the architecture:
 - Shared shader utilities/common functions
 - Interactive parameters via UI controls
-- Video input support (Webcam/Canvas)
+- Live video input support (Webcam/Canvas)
 - Effect chaining/composition
 - WASM-based effect simulation (closer to original hardware timing)
 
